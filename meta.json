@@ -1,0 +1,13 @@
+{
+    "App": "Directory",
+    "Description": "Lists all the hackerspaces that are using the Space API.",
+    "Authors": [
+        {
+            "Name": "Romain Schmitz",
+            "Nickname": "Slopjong",
+            "Hackerspace": "Syn2cat"
+        }
+    ],
+    "License": "",
+    "Updated": "20.5.2013"
+}

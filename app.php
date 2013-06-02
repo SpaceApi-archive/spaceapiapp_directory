@@ -104,95 +104,60 @@ if( file_exists($public_directory_path))
         $public_directory = array();
 }
 
-$amount = count($public_directory);
-$amount_columns = 4;
-
+// get the space names and sort them
+Utils::ksort($public_directory, true);
 $space_names = array_keys($public_directory);
-sort($space_names);
 
-$columns = array();
+// calculate the amount of elements per column
+$amounts = amount_per_column($public_directory, 4);
 
-for($i=0; $i<$amount; $i++)
+// contains the <li>foo</li> tags, the array indices
+// address the column
+$list_item_tags = array();
+
+foreach($amounts as $column_number => $amount)
 {
-    $space_name = $space_names[$i];
-    $space_endpoint = $public_directory[$space_name];
-    
-    $space_api_validator = new SpaceApiValidator;
-    $sanitized_space_name = NiceFileName::get($space_name);
-    $space_file = "$sanitized_space_name.json";
-    $space_file_cached = file_get_contents(STATUSCACHEDIR . $space_file);
-    $space_api_file = new SpaceApiFile($space_file_cached);
-    
-    $obj = $space_api_file->json();
-    if(property_exists($obj, "url"))
-        $url = $obj->url;
-    else
-        $url = "#";
-    
-    $bullet_version = str_replace("0.", "", $space_api_file->version());
-    $bullet_color = $space_api_validator->validate($space_api_file) ? "green" : "red";
+    // initialize the $column_number-th element to avoid an "undefined offset" notice
+    // when we concatenate the list item tags
+    $list_item_tags[$column_number] = "";
 
-    $class = "version-$bullet_version-$bullet_color";    
+    for($i=0; $i < $amount; $i++)
+    {
+        // take the top element out of the space name array
+        $space_name = array_shift($space_names);
+        $space_endpoint = $public_directory[$space_name];
 
-    $list_element = "<li class=\"$class\"><a href=\"$url\" target=\"_blank\">$space_name</a></li>";
-    
-    /*
-    // this loop currently doesn't process the ranges exclusively, every range is processed 
-    for($column_number=1; $column_number<=$amount_columns; $column_number++)
-    {
-        if($i < ( $amount % $amount_columns + floor($amount / $amount_columns) * $column_number))
-        {
-            $columns[$column_number-1] .= $list_element;
-            continue;
-        }
-    }
-    //*/
-    
-    /*
-    // this almost works but the #modulo spaces are lost
-    for($column_number=$amount_columns; $column_number>0; $column_number--)
-    {
-        if($i >= ( $amount % $amount_columns + floor($amount / $amount_columns) * ($column_number-1)))
-        {
-            $columns[$column_number-1] .= $list_element;
-            break;
-        }
-    }
-    //*/
-    
-    //*
-    switch(true)
-    {
-        // 1st column
-        case $i < ( $amount % $amount_columns + floor($amount / $amount_columns) * 1):
-            
-            $columns[0] .= $list_element;
-            break;
-        
-        // 2nd column
-        case $i < ($amount % $amount_columns + floor($amount / $amount_columns) * 2):
-            
-            $columns[1] .= $list_element;
-            break;
-        
-        // 3rd column
-        case $i < ($amount % $amount_columns + floor($amount / $amount_columns) * 3):
-            
-            $columns[2] .= $list_element;
-            break;
+        $sanitized_space_name = NiceFileName::get($space_name);
+        $space_file = "$sanitized_space_name.json";
+        $space_file_cached = file_get_contents(STATUSCACHEDIR . $space_file);
+        $space_api_file = new SpaceApiFile($space_file_cached);
 
-        // 4th column
-        case $i < ($amount % $amount_columns + floor($amount / $amount_columns) * 4):
-            
-            $columns[3] .= $list_element;
-            break;
-        
-        // this should never happen
-        default:
-            break;
+        $obj = $space_api_file->json();
+        if(property_exists($obj, "url"))
+            $url = $obj->url;
+        else
+            $url = "#";
+
+        $bullet_version = str_replace("0.", "", $space_api_file->version());
+
+        // we have to create a new instance before calling validate(), otherwise the script runs extremely
+        // long, maybe because plugins are registered multiple times (which basically was fixed)
+        $space_api_validator = new SpaceApiValidator;
+        $bullet_color = $space_api_validator->validate($space_api_file) ? "green" : "red";
+        //$bullet_color = "green";
+
+        $class = "version-$bullet_version-$bullet_color";
+
+        $list_element = "<li class=\"$class\"><a href=\"$url\" target=\"_blank\">$space_name</a></li>";
+
+        $list_item_tags[$column_number] .= $list_element;
     }
-    //*/
 }
+
+// create the visuals of the space list
+$space_list = "";
+foreach($list_item_tags as $column)
+    $space_list .= '<div class="span3"><ul>'. $column .'</ul></div>';
 
 $html = <<<HTML
 
@@ -207,18 +172,9 @@ $html = <<<HTML
         </p>
         
         <div class="row">
-            %LIST%
+            $space_list
         </div>
     </section>
 HTML;
-
-// create the visuals of the space list
-$space_list = "";
-foreach($columns as $column)
-    $space_list .= '<div class="span3"><ul>'. $column .'</ul></div>';
-
-    
-// replace the placeholder
-$html = str_replace("%LIST%", $space_list, $html);
 
 $page->addContent($html);

@@ -78,7 +78,7 @@ $html = <<<HTML
         </p>
         
         <p>
-            There's more to discover. <a href="documentation#Filters">Learn more about the filters</a>.
+            There's more to discover. <a href="documentation#left-tab-filters">Learn more about the filters</a>.
         </p>
         
     </section>

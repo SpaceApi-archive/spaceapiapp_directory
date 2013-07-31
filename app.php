@@ -6,49 +6,17 @@
 if(!defined("APPSDIR"))
     die("Direct access is not allowed!");
 
-$app_dir = realpath(dirname(__FILE__));
-// remove the full path of the document root
-$app_dir = str_replace(ROOTDIR, "", $app_dir);
-
-$page->setActivePage(basename($app_dir));
-
 //********************************************************************
 
 
-$page->addStylesheet("$app_dir/css/style.css");
+$page->addStylesheet("css/style.css");
 
 
 for($i=8; $i<13; $i++)
 {
-    $page->addPrefetchAsset("http://" . SITE_URL . "/$app_dir/img/bullet_green_$i.png");
-    $page->addPrefetchAsset("http://" . SITE_URL . "/$app_dir/img/bullet_red_$i.png");
+    $page->addPrefetchAsset("http://%SITEURL%/%APPDIR%/img/bullet_green_$i.png");
+    $page->addPrefetchAsset("http://%SITEURL%/%APPDIR%/img/bullet_red_$i.png");
 }
-
-
-// define the auto class loader
-function class_loader($classname)
-{
-    $classfile = CLASSDIR . "$classname.class.php";
-    
-    if (file_exists($classfile))
-    {
-        require_once($classfile);
-        return true;
-    }
-    
-    // this is not so ideal, when the config cannot be loaded this fails
-    // so just be sure the Config class is always included!
-    $logger = KLogger::instance(LOGDIR, DEBUG_LEVEL);
-    $logger->logEmerg("The class '$classname' cannot be loaded!");
-    
-    return false;
-}
-
-spl_autoload_register("class_loader");
-
-// whenever the backend classes are used, we most probably need the logger and the SAPI constant
-$logger = KLogger::instance(LOGDIR, DEBUG_LEVEL);
-define('SAPI', 'apache');
     
 $html = <<<HTML
 
@@ -62,33 +30,30 @@ $html = <<<HTML
         <p>
             If you are a developer who wants to write an application based on the <strong>Space API</strong>, you can fetch the directory directly from this website.
             
-            <pre><code><a href="directory.json">http://%s/directory.json</a></pre></code>
+            <pre><code><a href="http://%SITEURL%/directory.json">%SITEURL%/directory.json</a></pre></code>
         </p>
         
         <p>
             Some <strong>Space API</strong> versions are not downwards compatible. If you need endpoints that have a specific version implemented you can filter those out with the following URL.
             
-            <pre><code><a href="directory.json?api=0.13">http://%s/directory.json?api=0.13</a></pre></code>
+            <pre><code><a href="http://%SITEURL%/directory.json?api=0.13">%SITEURL%/directory.json?api=0.13</a></pre></code>
         </p>
         
         <p>
             There's more. If you write an application which is only interested in endpoints that provide webcam streams you should use the <strong>filter</strong> option.
             
-            <pre><code><a href="directory.json?filter=cam">http://%s/directory.json?filter=cam</a></pre></code> 
+            <pre><code><a href="http://%SITEURL%/directory.json?filter=cam">%SITEURL%/directory.json?filter=cam</a></pre></code>
         </p>
         
         <p>
-            There's more to discover. <a href="documentation#Filters">Learn more about the filters</a>.
+            There's more to discover. <a href="http://%SITEURL%/documentation#Filters">Learn more about the filters</a>.
         </p>
         
     </section>
 
 HTML;
 
-// sprintf is used here because we need to render a constant into the heredoc, PHP doesn't allow this natively.
-// Another way could have been to copy the constant to a variable but this variable is possibly messing up with
-// the global scope.
-$page->addContent(sprintf($html, SITE_URL, SITE_URL, SITE_URL));
+$page->addContent($html);
 
 $public_directory_path = DIRECTORYDIR . "directory.json.public";
 
